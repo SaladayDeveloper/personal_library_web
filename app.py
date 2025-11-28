@@ -244,14 +244,29 @@ def add_reading_session(book_id):
     return redirect(url_for('book_detail', book_id=book_id))
 
 
-# Добавление новой книги
+# В маршруте /book/add (POST)
 @app.route('/book/add', methods=['GET', 'POST'])
 def add_book():
     if request.method == 'POST':
+        # Обработка автора
+        author_name = request.form.get('author')
+        author = None
+
+        if author_name:
+            # Ищем существующего автора
+            author = Author.query.filter_by(name=author_name).first()
+
+            # Если автора нет - создаем нового
+            if not author:
+                author = Author(name=author_name)
+                db.session.add(author)
+                db.session.flush()  # Получаем ID без коммита
+
         # Обработка формы добавления книги
         book_data = {
             'title': request.form.get('title'),
-            'author': request.form.get('author'),
+            'author': author_name,  # Сохраняем имя автора как строку
+            'author_id': author.id if author else None,  # Связываем с таблицей авторов
             'isbn': request.form.get('isbn'),
             'publication_year': request.form.get('publication_year', type=int),
             'publisher': request.form.get('publisher'),
