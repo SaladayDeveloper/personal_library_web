@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- Статистика -->
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h4>{{ total_books }}</h4>
+                <p class="card-text">Всего книг</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <h4>{{ reading_books }}</h4>
+                <p class="card-text">Читаю сейчас</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h4>{{ completed_books }}</h4>
+                <p class="card-text">Прочитано</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Последние добавленные -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Последние добавленные книги</h5>
+            </div>
+            <div class="card-body">
+                {% for book in recent_books %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <h6 class="mb-0">{{ book.title }}</h6>
+                        <small class="text-muted">{{ book.author }}</small>
+                    </div>
+                    <span class="badge bg-secondary">{{ book.date_added|datetime }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Текущее чтение -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Сейчас читаю</h5>
+            </div>
+            <div class="card-body">
+                {% for book in current_reading %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <h6 class="mb-0">{{ book.title }}</h6>
+                        <small class="text-muted">{{ book.author }}</small>
+                        {% if book.page_count %}
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar" style="width: {{ (book.current_page / book.page_count * 100)|round }}%"></div>
+                        </div>
+                        <small>{{ book.current_page }}/{{ book.page_count }} стр.</small>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('book_detail', book_id=book.id) }}" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

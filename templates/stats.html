@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Статистика чтения</h2>
+
+<div class="row">
+    <!-- Общая статистика -->
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h4>{{ total_books }}</h4>
+                <p class="card-text">Всего книг в библиотеке</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Книги по статусам -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Книги по статусам</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Книги по жанрам -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Книги по жанрам</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="genreChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Темп чтения -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Темп чтения ({{ current_year }}) - страниц в месяц</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="readingPaceChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Активность по сезонам -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Активность чтения по сезонам ({{ current_year }})</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="seasonalActivityChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Книги по статусам
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {
+        labels: [{% for status, count in books_by_status %}'{{ status }}',{% endfor %}],
+        datasets: [{
+            data: [{% for status, count in books_by_status %}{{ count }},{% endfor %}],
+            backgroundColor: [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+            ]
+        }]
+    };
+    
+    new Chart(statusCtx, {
+        type: 'pie',
+        data: statusData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Книги по жанрам
+    const genreCtx = document.getElementById('genreChart').getContext('2d');
+    const genreData = {
+        labels: [{% for genre, count in books_by_genre %}'{{ genre }}',{% endfor %}],
+        datasets: [{
+            label: 'Количество книг',
+            data: [{% for genre, count in books_by_genre %}{{ count }},{% endfor %}],
+            backgroundColor: '#36A2EB'
+        }]
+    };
+    
+    new Chart(genreCtx, {
+        type: 'bar',
+        data: genreData,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Темп чтения
+    const paceCtx = document.getElementById('readingPaceChart').getContext('2d');
+    const monthlyPages = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    {% for data in monthly_pages %}
+    monthlyPages[{{ data.month - 1 }}] = {{ data.total_pages }};
+    {% endfor %}
+    
+    new Chart(paceCtx, {
+        type: 'line',
+        data: {
+            labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            datasets: [{
+                label: 'Страниц в месяц',
+                data: monthlyPages,
+                borderColor: '#FF6384',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Активность по сезонам
+    const seasonalCtx = document.getElementById('seasonalActivityChart').getContext('2d');
+    new Chart(seasonalCtx, {
+        type: 'polarArea',
+        data: {
+            labels: ['Зима', 'Весна', 'Лето', 'Осень'],
+            datasets: [{
+                data: [
+                    {{ seasonal_activity.Winter }},
+                    {{ seasonal_activity.Spring }},
+                    {{ seasonal_activity.Summer }},
+                    {{ seasonal_activity.Autumn }}
+                ],
+                backgroundColor: [
+                    '#4BC0C0',
+                    '#36A2EB',
+                    '#FF6384',
+                    '#FFCE56'
+                ]
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+</script>
+{% endblock %}

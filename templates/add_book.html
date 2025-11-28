@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3>Добавить книгу</h3>
+            </div>
+            <div class="card-body">
+                <!-- Поиск по ISBN -->
+                <div class="mb-4">
+                    <h5>Поиск по ISBN</h5>
+                    <div class="input-group">
+                        <input type="text" id="isbnSearch" class="form-control" placeholder="Введите ISBN">
+                        <button type="button" id="searchBtn" class="btn btn-primary">Найти</button>
+                    </div>
+                    <div id="searchResult" class="mt-2"></div>
+                </div>
+
+                <hr>
+
+                <!-- Форма добавления книги -->
+                <form method="post" action="{{ url_for('add_book') }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Название *</label>
+                                <input type="text" name="title" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Автор *</label>
+                                <input type="text" name="author" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">ISBN</label>
+                                <input type="text" name="isbn" class="form-control" id="isbnField">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Год издания</label>
+                                <input type="number" name="publication_year" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Издатель</label>
+                                <input type="text" name="publisher" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Жанр</label>
+                                <input type="text" name="genre" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Теги (через запятую)</label>
+                        <input type="text" name="tags" class="form-control" placeholder="фантастика, приключения, классика">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Ссылка на обложку</label>
+                                <input type="url" name="cover_image_url" class="form-control" id="coverField">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Язык</label>
+                                <input type="text" name="language" class="form-control" value="Russian">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Количество страниц</label>
+                                <input type="number" name="page_count" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Местоположение</label>
+                                <input type="text" name="physical_location" class="form-control" placeholder="Полка 1, Шкаф 2">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Статус</label>
+                                <select name="reading_status" class="form-select">
+                                    <option value="не начата">Не начата</option>
+                                    <option value="читаю">Читаю</option>
+                                    <option value="прочитана">Прочитана</option>
+                                    <option value="брошена">Брошена</option>
+                                    <option value="в планах">В планах</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Рейтинг (1-10)</label>
+                                <input type="number" name="my_rating" class="form-control" min="1" max="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Заметки</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Добавить книгу</button>
+                    <a href="{{ url_for('books') }}" class="btn btn-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('searchBtn').addEventListener('click', function() {
+        const isbn = document.getElementById('isbnSearch').value;
+        const resultDiv = document.getElementById('searchResult');
+        
+        if (!isbn) {
+            resultDiv.innerHTML = '<div class="alert alert-warning">Введите ISBN</div>';
+            return;
+        }
+
+        resultDiv.innerHTML = '<div class="alert alert-info">Поиск...</div>';
+
+        fetch(`{{ url_for('search_isbn') }}?isbn=${isbn}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                } else {
+                    // Заполняем форму данными
+                    document.querySelector('input[name="title"]').value = data.title || '';
+                    document.querySelector('input[name="author"]').value = data.author || '';
+                    document.querySelector('input[name="isbn"]').value = data.isbn || '';
+                    document.querySelector('input[name="publication_year"]').value = data.publication_year || '';
+                    document.querySelector('input[name="publisher"]').value = data.publisher || '';
+                    document.querySelector('input[name="cover_image_url"]').value = data.cover_image_url || '';
+                    document.querySelector('input[name="page_count"]').value = data.page_count || '';
+                    
+                    resultDiv.innerHTML = '<div class="alert alert-success">Данные найдены и заполнены!</div>';
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = '<div class="alert alert-danger">Ошибка при поиске</div>';
+            });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2>Цели чтения</h2>
+        
+        {% for goal in goals %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="card-title">
+                        {{ goal.year }} год: 
+                        {{ goal.target }} 
+                        {% if goal.goal_type == 'books' %}книг{% else %}страниц{% endif %}
+                    </h5>
+                    <span class="badge bg-{% if goal.current_progress >= goal.target %}success{% else %}warning{% endif %}">
+                        {{ goal.current_progress }}/{{ goal.target }}
+                    </span>
+                </div>
+                
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar 
+                        {% if goal.current_progress >= goal.target %}bg-success
+                        {% else %}bg-primary{% endif %}" 
+                        role="progressbar" 
+                        style="width: {{ (goal.current_progress / goal.target * 100) | round(2) }}%;"
+                        aria-valuenow="{{ goal.current_progress }}" 
+                        aria-valuemin="0" 
+                        aria-valuemax="{{ goal.target }}">
+                        {{ (goal.current_progress / goal.target * 100) | round(2) }}%
+                    </div>
+                </div>
+                
+                <div class="mt-2 text-muted">
+                    {% if goal.goal_type == 'books' %}
+                    Прочитано книг: {{ goal.current_progress }}
+                    {% else %}
+                    Прочитано страниц: {{ goal.current_progress }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> У вас пока нет целей чтения. Добавьте первую цель!
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Добавить цель</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('goals') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Год</label>
+                        <input type="number" name="year" class="form-control" value="{{ now.year }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Тип цели</label>
+                        <select name="goal_type" class="form-select" required>
+                            <option value="books">Количество книг</option>
+                            <option value="pages">Количество страниц</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Целевое значение</label>
+                        <input type="number" name="target" class="form-control" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Добавить цель</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

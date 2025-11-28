@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Обложка и основная информация -->
+        <div class="card">
+            <div class="card-body text-center">
+                {% if book.cover_image_url %}
+                <img src="{{ book.cover_image_url }}" alt="Обложка" class="img-fluid mb-3" style="max-height: 300px;">
+                {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center mb-3" style="height: 300px;">
+                    <i class="fas fa-book fa-5x text-muted"></i>
+                </div>
+                {% endif %}
+                
+                <h3>{{ book.title }}</h3>
+                <h5 class="text-muted">{{ book.author }}</h5>
+                
+                <!-- Статус и рейтинг -->
+                <div class="mt-3">
+                    <span class="badge bg-{% if book.reading_status == 'прочитана' %}success
+                                         {% elif book.reading_status == 'читаю' %}warning
+                                         {% elif book.reading_status == 'брошена' %}danger
+                                         {% else %}secondary{% endif %} fs-6">
+                        {{ book.reading_status }}
+                    </span>
+                    
+                    {% if book.my_rating %}
+                    <div class="mt-2">
+                        <strong>Рейтинг:</strong> 
+                        <span class="text-warning">
+                            {% for i in range(book.my_rating) %}★{% endfor %}
+                            {% for i in range(10 - book.my_rating) %}☆{% endfor %}
+                        </span>
+                        ({{ book.my_rating }}/10)
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Быстрое изменение статуса -->
+                <form method="post" action="{{ url_for('update_book_status', book_id=book.id) }}" class="mt-3">
+                    <div class="input-group">
+                        <select name="status" class="form-select">
+                            <option value="не начата" {% if book.reading_status == 'не начата' %}selected{% endif %}>Не начата</option>
+                            <option value="читаю" {% if book.reading_status == 'читаю' %}selected{% endif %}>Читаю</option>
+                            <option value="прочитана" {% if book.reading_status == 'прочитана' %}selected{% endif %}>Прочитана</option>
+                            <option value="брошена" {% if book.reading_status == 'брошена' %}selected{% endif %}>Брошена</option>
+                            <option value="в планах" {% if book.reading_status == 'в планах' %}selected{% endif %}>В планах</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Обновить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Прогресс чтения -->
+        {% if book.page_count and book.reading_status == 'читаю' %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Прогресс чтения</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {{ (book.current_page / book.page_count * 100) | round }}%;"
+                         aria-valuenow="{{ book.current_page }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ book.page_count }}">
+                        {{ (book.current_page / book.page_count * 100) | round }}%
+                    </div>
+                </div>
+                <div class="text-center mt-2">
+                    {{ book.current_page }} / {{ book.page_count }} страниц
+                </div>
+
+                <!-- Форма добавления сессии чтения -->
+                <form method="post" action="{{ url_for('add_reading_session', book_id=book.id) }}" class="mt-3">
+                    <div class="mb-2">
+                        <label class="form-label">Добавить сессию чтения</label>
+                        <input type="number" name="pages_read" class="form-control" placeholder="Прочитано страниц" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="number" name="duration_minutes" class="form-control" placeholder="Длительность (минуты)">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Добавить</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <!-- Детальная информация -->
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#info">Информация</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#description">Описание</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#sessions">Сессии чтения</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#notes">Заметки</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <!-- Вкладка информации -->
+                    <div class="tab-pane fade show active" id="info">
+                        <table class="table">
+                            <tr>
+                                <th>ISBN:</th>
+                                <td>{{ book.isbn or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Год издания:</th>
+                                <td>{{ book.publication_year or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Издатель:</th>
+                                <td>{{ book.publisher or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Жанр:</th>
+                                <td>{{ book.genre or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Теги:</th>
+                                <td>
+                                    {% if book.tags %}
+                                        {% for tag in book.tags|tags_list %}
+                                        <span class="badge bg-secondary">{{ tag }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Язык:</th>
+                                <td>{{ book.language or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Количество страниц:</th>
+                                <td>{{ book.page_count or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Местоположение:</th>
+                                <td>{{ book.physical_location or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Дата добавления:</th>
+                                <td>{{ book.date_added|datetime }}</td>
+                            </tr>
+                            {% if book.date_started_reading %}
+                            <tr>
+                                <th>Начал читать:</th>
+                                <td>{{ book.date_started_reading|datetime }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if book.date_finished_reading %}
+                            <tr>
+                                <th>Закончил читать:</th>
+                                <td>{{ book.date_finished_reading|datetime }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+
+                    <!-- Вкладка описания -->
+                    <div class="tab-pane fade" id="description">
+                        <p>{{ book.description or 'Описание отсутствует.' }}</p>
+                    </div>
+
+                    <!-- Вкладка сессий чтения -->
+                    <div class="tab-pane fade" id="sessions">
+                        {% if reading_sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Страниц</th>
+                                        <th>Длительность</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in reading_sessions %}
+                                    <tr>
+                                        <td>{{ session.start_time|datetime }}</td>
+                                        <td>{{ session.pages_read }}</td>
+                                        <td>{{ session.duration_minutes }} мин.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p>Сессии чтения отсутствуют.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Вкладка заметок -->
+                    <div class="tab-pane fade" id="notes">
+                        <p>{{ book.notes or 'Заметки отсутствуют.' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- График прогресса -->
+        {% if progress_data %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>График прогресса чтения</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="progressChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if progress_data %}
+<script>
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    const progressData = {{ progress_data | safe }};
+    
+    const dates = progressData.map(item => item.date);
+    const pages = progressData.map(item => item.pages);
+    const sessionPages = progressData.map(item => item.session_pages);
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Суммарный прогресс (страниц)',
+                    data: pages,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1,
+                    fill: false
+                },
+                {
+                    label: 'За сессию (страниц)',
+                    data: sessionPages,
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}
